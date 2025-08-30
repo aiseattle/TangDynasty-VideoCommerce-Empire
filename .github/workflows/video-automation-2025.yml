@@ -1,106 +1,43 @@
-# GitHub Actions 视频自动化工作流 - 2025年8月最新版
-name: 🎥 智能视频自动化工作流 2025
+name: RunwayML Video Automation for USA Market
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # 每天上午9点执行
-  workflow_dispatch:     # 允许手动触发
-    inputs:
-      video_topic:
-        description: '视频主题'
-        required: false
-        default: '日常科技资讯'
-        type: string
-      video_length:
-        description: '视频时长(秒)'
-        required: false
-        default: '300'
-        type: string
-      ai_model:
-        description: 'AI模型选择'
-        required: false
-        default: 'gpt-4o'
-        type: choice
-        options:
-        - gpt-4o
-        - claude-3.5-sonnet
-        - gemini-pro
-
-# 2025年新增：OIDC权限配置
-permissions:
-  id-token: write
-  contents: read
-  actions: read
-  security-events: write
+    - cron: '0 */6 * * *'  # 每6小时运行一次
+  workflow_dispatch:
 
 jobs:
-  video-automation:
-    runs-on: ubuntu-24.04  # 2025年LTS版本
-    
-    # 2025年新增：环境配置
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.page_url }}
+  generate_and_publish:
+    runs-on: ubuntu-latest
     
     steps:
-    - name: 🚀 检出代码 (checkout@v5)
-      uses: actions/checkout@v5
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
       with:
-        fetch-depth: 0
-        lfs: true
-        token: ${{ secrets.GITHUB_TOKEN }}
-      
-    - name: 🐍 设置Python环境 (Python 3.12)
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-        cache: 'pip'
-        
-    - name: 🔧 缓存依赖
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-          
-    - name: 📦 安装依赖 (2025年最新版本)
+        python-version: '3.9'
+    
+    - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install openai>=1.35.0
-        pip install moviepy>=2.0.0
-        pip install google-api-python-client>=2.100.0
-        pip install google-auth>=2.25.0
-        pip install pillow>=10.0.0
-        pip install numpy>=1.25.0
-        pip install ffmpeg-python>=0.2.0
-        pip install requests>=2.31.0
-        
-    - name: 🤖 生成视频脚本 (GPT-4o)
-      run: python scripts/generate_script.py
+        pip install requests openai elevenlabs youtube-api-python tiktok-api
+    
+    - name: Generate content for USA market
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        VIDEO_TOPIC: ${{ github.event.inputs.video_topic || '日常科技资讯' }}
-        AI_MODEL: ${{ github.event.inputs.ai_model || 'gpt-4o' }}
-        
-    - name: 🎬 创建智能视频
-      run: python scripts/create_video.py
-      env:
-        VIDEO_LENGTH: ${{ github.event.inputs.video_length || '300' }}
-        ELEVEN_LABS_API_KEY: ${{ secrets.ELEVEN_LABS_API_KEY }}
-        
-    - name: 📤 上传到YouTube (API v4)
-      run: python scripts/upload_youtube.py
+        RUNWAYML_API_KEY: ${{ secrets.RUNWAYML_API_KEY }}
+        ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      run: |
+        python scripts/generate_usa_content.py
+    
+    - name: Upload to YouTube
       env:
         YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-        YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-        YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-        
-    - name: 💾 上传生成结果
-      uses: actions/upload-artifact@v4
-      with:
-        name: generated-videos-${{ github.run_number }}
-        path: |
-          output/
-          logs/
-        retention-days: 30
+      run: |
+        python scripts/upload_youtube.py
+    
+    - name: Upload to TikTok
+      env:
+        TIKTOK_API_KEY: ${{ secrets.TIKTOK_API_KEY }}
+      run: |
+        python scripts/upload_tiktok.py
