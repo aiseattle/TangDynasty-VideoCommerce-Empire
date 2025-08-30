@@ -1,0 +1,20 @@
+{
+  "youtube": {
+    "api_endpoint": "https://www.googleapis.com/youtube/v3",
+    "upload_settings": {
+      "title_max_length": 100,
+      "description_max_length": 5000,
+      "tags_max_count": 15,
+      "optimal_resolution": "1280x720"
+    }
+  },
+  "tiktok": {
+    "api_endpoint": "https://open-api.tiktok.com/platform/v1",
+    "upload_settings": {
+      "title_max_length": 50,
+      "description_max_length": 2200,
+      "optimal_resolution": "1080x1920",
+      "optimal_duration": 15
+    }
+  }
+}
