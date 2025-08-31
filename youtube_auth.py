@@ -13,11 +13,11 @@ SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
 # 你的OAuth客户端配置
 CLIENT_CONFIG = {
     "installed": {
-        "client_id": "293404235364-ss70qnpqi15vb5dqmeqh9p7kymoq3u.apps.googleusercontent.com",
-        "client_secret": "GOCSPX-Ygg2HUMCK0Dp38PCB0YrfE0wR",
+        "client_id": "293420423364-ss00qnpg13va38smechr9g7tvmpot0u.apps.googleusercontent.com",
+        "client_secret": "GOCSPX-Ygg2jbUMGGDpbPBG8CYTEFOW8",
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
         "token_uri": "https://oauth2.googleapis.com/token",
-        "redirect_uris": ["http://localhost"]
+        "redirect_uris": ["http://localhost:8080/"]
     }
 }
 
