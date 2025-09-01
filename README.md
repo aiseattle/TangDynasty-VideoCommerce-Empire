@@ -18,3 +18,6 @@
 2. 设置API密钥secrets
 3. 启用GitHub Actions
 4. 开始自动化赚钱！
+
+## TikTok Verification Update
+Updated: January 9, 2025 - Force deployment for verification file
