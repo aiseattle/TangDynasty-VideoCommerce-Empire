@@ -21,3 +21,8 @@
 
 ## TikTok Verification Update
 Updated: January 9, 2025 - Force deployment for verification file
+
+## TikTok Verification Update
+Force deployment: January 9, 2025 - Include verification file
+Deployment trigger: .nojekyll added + force refresh
+
