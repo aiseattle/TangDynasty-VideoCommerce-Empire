@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>TikTok OAuth 回调 - VideoContentStudio</title>
+    <style>
+        body { font-family: system-ui, Arial; max-width: 800px; margin: 40px auto; padding: 20px; background: #f8f9fa; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .success { color: #28a745; background: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .error { color: #dc3545; background: #f8d7da; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .code-box { background: #f1f3f4; padding: 15px; border-radius: 6px; font-family: monospace; word-break: break-all; }
+        h1 { color: #ff0050; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <h1>🎵 TikTok OAuth 授权回调</h1>
+        <p>VideoContentStudio - 授权处理页面</p>
+        <div id='result'>正在处理授权结果...</div>
+        <div style='margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 8px;'>
+            <h3>📋 使用说明：</h3>
+            <p>1. 复制上面显示的 authorization code</p>
+            <p>2. 在10分钟内使用此code换取access token</p>
+            <p>3. 保存token用于后续API调用</p>
+        </div>
+    </div>
+    
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const error = params.get('error');
+        const errorDesc = params.get('error_description');
+        
+        const resultDiv = document.getElementById('result');
+        
+        if (error) {
+            resultDiv.innerHTML = '<div class="error"><h3>❌ 授权失败</h3><p>错误: ' + error + '</p><p>描述: ' + (errorDesc || '未知错误') + '</p></div>';
+        } else if (code) {
+            resultDiv.innerHTML = '<div class="success"><h3>✅ 授权成功！</h3><p><strong>Authorization Code:</strong></p><div class="code-box">' + code + '</div><p style="margin-top: 15px;"><strong>State:</strong> ' + (state || 'N/A') + '</p><p style="margin-top: 10px; font-size: 14px; color: #666;">⏰ 此code将在10分钟后过期</p></div>';
+        } else {
+            resultDiv.innerHTML = '<div class="error"><h3>⚠️ 未检测到授权参数</h3><p>请通过TikTok授权链接访问此页面</p></div>';
+        }
+    </script>
+</body>
+</html>
