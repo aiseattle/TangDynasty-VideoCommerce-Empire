@@ -1,0 +1,167 @@
+name: Preflight APIs (YouTube/OpenAI/Runway/ElevenLabs)
+on:
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: Show extra debug
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare PRECHECK.md
+        run: |
+          mkdir -p automation-test
+          echo "# API Preflight Report" > PRECHECK.md
+          echo "" >> PRECHECK.md
+          echo "- Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> PRECHECK.md
+          echo "" >> PRECHECK.md
+
+      # 兼容两套命名：YT_* 和 YOUTUBE_*
+      - name: Check presence of secrets/env
+        id: presence
+        env:
+          HAS_YT_A: ${{ secrets.YT_CLIENT_ID && secrets.YT_CLIENT_SECRET && secrets.YT_REFRESH_TOKEN && 'yes' || 'no' }}
+          HAS_YT_B: ${{ secrets.YOUTUBE_CLIENT_ID && secrets.YOUTUBE_CLIENT_SECRET && secrets.YOUTUBE_REFRESH_TOKEN && 'yes' || 'no' }}
+          HAS_OAI:  ${{ secrets.OPENAI_API_KEY && 'yes' || 'no' }}
+          HAS_RUN:  ${{ secrets.RUNWAY_API_KEY && 'yes' || 'no' }}
+          HAS_ELE:  ${{ secrets.ELEVENLABS_API_KEY && 'yes' || 'no' }}
+        run: |
+          echo "## Presence" >> PRECHECK.md
+          if [ "${HAS_YT_A}" = "yes" ] || [ "${HAS_YT_B}" = "yes" ]; then
+            echo "- YouTube secrets present: yes (YT_* or YOUTUBE_*)" >> PRECHECK.md
+          else
+            echo "- YouTube secrets present: no" >> PRECHECK.md
+          fi
+          echo "- OPENAI_API_KEY present: ${HAS_OAI}"   >> PRECHECK.md
+          echo "- RUNWAY_API_KEY present: ${HAS_RUN}"   >> PRECHECK.md
+          echo "- ELEVENLABS_API_KEY present: ${HAS_ELE}" >> PRECHECK.md
+          echo "" >> PRECHECK.md
+
+      - name: YouTube OAuth refresh-token test
+        id: yt
+        env:
+          YT_CLIENT_ID_A:     ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET_A: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN_A: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_CLIENT_ID_B:     ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YT_CLIENT_SECRET_B: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN_B: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          YT_CLIENT_ID="${YT_CLIENT_ID_A:-$YT_CLIENT_ID_B}"
+          YT_CLIENT_SECRET="${YT_CLIENT_SECRET_A:-$YT_CLIENT_SECRET_B}"
+          YT_REFRESH_TOKEN="${YT_REFRESH_TOKEN_A:-$YT_REFRESH_TOKEN_B}"
+          echo "## YouTube" >> PRECHECK.md
+          if [ -z "$YT_CLIENT_ID" ] || [ -z "$YT_CLIENT_SECRET" ] || [ -z "$YT_REFRESH_TOKEN" ]; then
+            echo "- [x] Missing YouTube secrets" >> PRECHECK.md
+            echo "" >> PRECHECK.md
+            exit 0
+          fi
+          RESP=$(curl -sS -X POST https://oauth2.googleapis.com/token \
+            -d client_id="$YT_CLIENT_ID" \
+            -d client_secret="$YT_CLIENT_SECRET" \
+            -d refresh_token="$YT_REFRESH_TOKEN" \
+            -d grant_type=refresh_token || true)
+          echo "$RESP" | tee yt_resp.json >/dev/null
+          if echo "$RESP" | jq -e '.access_token' >/dev/null 2>&1; then
+            echo "- [ ] OAuth error" >> PRECHECK.md
+            echo "- Exchange refresh_token **OK**" >> PRECHECK.md
+          else
+            ERR=$(echo "$RESP" | jq -r '.error,.error_description' 2>/dev/null | tr '\n' ' ')
+            echo "- [x] OAuth error: $ERR" >> PRECHECK.md
+          fi
+          echo "" >> PRECHECK.md
+
+      - name: OpenAI key test (list models)
+        id: oai
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "## OpenAI" >> PRECHECK.md
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "- [x] Missing OPENAI_API_KEY" >> PRECHECK.md
+            echo "" >> PRECHECK.md
+            exit 0
+          fi
+          CODE=$(curl -sS -o oai.json -w "%{http_code}" https://api.openai.com/v1/models \
+            -H "Authorization: Bearer $OPENAI_API_KEY" || true)
+          if [ "$CODE" = "200" ]; then
+            echo "- [ ] Auth error" >> PRECHECK.md
+            echo "- Auth **OK** (models listed)" >> PRECHECK.md
+          else
+            echo "- [x] Auth error (HTTP $CODE)" >> PRECHECK.md
+            cat oai.json >> PRECHECK.md
+          fi
+          echo "" >> PRECHECK.md
+
+      - name: Runway key presence (light)
+        id: runway
+        env:
+          RUNWAY_API_KEY: ${{ secrets.RUNWAY_API_KEY }}
+        run: |
+          echo "## Runway" >> PRECHECK.md
+          if [ -z "$RUNWAY_API_KEY" ]; then
+            echo "- [x] Missing RUNWAY_API_KEY" >> PRECHECK.md
+          else
+            echo "- Key present (further API checks later)" >> PRECHECK.md
+          fi
+          echo "" >> PRECHECK.md
+
+      - name: ElevenLabs voice API test (non-billing)
+        id: eleven
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          echo "## ElevenLabs (Voice)" >> PRECHECK.md
+          if [ -z "$ELEVENLABS_API_KEY" ]; then
+            echo "- [x] Missing ELEVENLABS_API_KEY" >> PRECHECK.md
+            echo "" >> PRECHECK.md
+            exit 0
+          fi
+          CODE=$(curl -sS -o eleven.json -w "%{http_code}" https://api.elevenlabs.io/v1/user \
+            -H "xi-api-key: $ELEVENLABS_API_KEY" || true)
+          if [ "$CODE" = "200" ]; then
+            echo "- [ ] Auth error" >> PRECHECK.md
+            echo "- Auth **OK** (user endpoint)" >> PRECHECK.md
+          else
+            echo "- [x] Auth error (HTTP $CODE)" >> PRECHECK.md
+            cat eleven.json >> PRECHECK.md
+          fi
+          echo "" >> PRECHECK.md
+
+      - name: Save PRECHECK.md into repo (automation-test/)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(preflight): update PRECHECK.md"
+          file_pattern: PRECHECK.md
+          commit_user_name: MCP Bot
+          commit_user_email: bot@example.com
+          add_options: '-A'
+        env:
+          GIT_AUTHOR_NAME: MCP Bot
+          GIT_AUTHOR_EMAIL: bot@example.com
+      - name: Move PRECHECK.md to automation-test with timestamp
+        run: |
+          TS=$(date -u +"%Y%m%dT%H%M%SZ")
+          cp PRECHECK.md "automation-test/PRECHECK_${TS}.md"
+
+      - name: Upload PRECHECK.md
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-apis
+          path: |
+            PRECHECK.md
+            automation-test/PRECHECK_*.md
+
+      - name: Job summary
+        run: |
+          echo "## API Preflight Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat PRECHECK.md >> $GITHUB_STEP_SUMMARY
