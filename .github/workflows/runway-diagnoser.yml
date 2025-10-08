@@ -21,13 +21,10 @@ jobs:
             const owner = context.repo.owner;
             const repo  = context.repo.repo;
             const runId = context.payload.workflow_run.id;
-
-            // Download logs as ZIP (arraybuffer)
             const res = await github.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs", {
               owner, repo, run_id: runId,
               request: { responseType: 'arraybuffer' }
             });
-
             const fs = require('fs');
             fs.writeFileSync('logs.zip', Buffer.from(res.data));
             core.setOutput('run_url', context.payload.workflow_run.html_url);
@@ -50,13 +47,9 @@ jobs:
           echo "" >> DIAGNOSIS.md
           echo "## Heuristics" >> DIAGNOSIS.md
 
-          # 汇总匹配（缺密钥/鉴权失败/配额/依赖等）
-          grep -RniE "NotFound|No such file|ENOENT|ModuleNotFoundError|ImportError|pip: not found|ffmpeg not found|codec not found|invalid_grant|401|403|quota|rate limit|YouTube|YT_CLIENT|YT_REFRESH_TOKEN|Permission denied|denied|Forbidden|KeyError|ReferenceError|TypeError|OpenAI|RUNWAY" logs || true
-
-          # 逐项检测并写入报告（出现即标注）
           function mark() { if grep -RniE "$1" logs >/dev/null; then echo "- [x] $2" >> DIAGNOSIS.md; else echo "- [ ] $2" >> DIAGNOSIS.md; fi }
 
-          mark "YT_CLIENT_ID|YT_CLIENT_SECRET|YT_REFRESH_TOKEN|YouTube" "YouTube 上传相关：可能缺少或无效的 Secrets（YT_CLIENT_ID/SECRET/REFRESH_TOKEN）或 API 报错"
+          mark "YT_CLIENT_ID|YT_CLIENT_SECRET|YT_REFRESH_TOKEN|YouTube" "YouTube 上传相关：可能缺少/无效的 Secrets（YT_CLIENT_ID/SECRET/REFRESH_TOKEN）或 API 报错"
           mark "invalid_grant|401|403" "OAuth/权限失败（invalid_grant/401/403）"
           mark "quota|rate limit" "配额/速率限制"
           mark "ffmpeg not found|codec not found" "FFmpeg/编码器缺失"
@@ -66,8 +59,6 @@ jobs:
 
           echo "" >> DIAGNOSIS.md
           echo "## Log Excerpts" >> DIAGNOSIS.md
-          echo "" >> DIAGNOSIS.md
-          # 输出若干命中片段，便于快速定位
           grep -RniE "invalid_grant|401|403|YT_|YouTube|quota|rate limit|ffmpeg|ModuleNotFoundError|ImportError|NotFound|ENOENT" logs | head -n 200 >> DIAGNOSIS.md || true
 
       - name: Upload diagnosis & logs
