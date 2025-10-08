@@ -1,0 +1,37 @@
+name: Preflight Bridge
+on:
+  push:
+    paths:
+      - ".mcp/preflight.json"
+
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read .mcp/preflight.json and dispatch preflight-apis
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '.mcp/preflight.json';
+            if (!fs.existsSync(path)) {
+              core.setFailed('preflight.json not found'); return;
+            }
+            let cfg;
+            try { cfg = JSON.parse(fs.readFileSync(path, 'utf8')); }
+            catch(e){ core.setFailed('Invalid JSON in .mcp/preflight.json'); return; }
+
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const ref   = cfg.ref || 'main';
+            const inputs = cfg.inputs || {};
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner, repo,
+              workflow_id: '.github/workflows/preflight-apis.yml',
+              ref,
+              inputs
+            });
+            core.notice(`Dispatched preflight-apis.yml on ${ref} with inputs=${JSON.stringify(inputs)}`);
