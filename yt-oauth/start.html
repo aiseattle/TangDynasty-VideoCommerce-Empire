@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8" />
+<title>YouTube OAuth Start</title>
+<h2>YouTube OAuth Start</h2>
+<p>使用你的 <code>client_id</code> 打开 Google 授权，授权完成后会跳回本页同目录下的 <code>callback.html</code> 并显示 <code>code</code>。</p>
+<ol>
+  <li>先在 <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a> 创建 OAuth client（Desktop 或 Web 均可）。</li>
+  <li>将回调地址(redirect URI) 设置为：<br>
+    <code>https://aiseattle.github.io/TangDynasty-VideoCommerce-Empire/yt-oauth/callback.html</code>
+  </li>
+  <li>把下面的 <code>client_id</code> 填好后点击“打开授权”。授权完成，复制 <code>code</code>，然后回到 MCP 触发交换工作流。</li>
+</ol>
+<label>client_id: <input id="cid" style="width:460px"></label>
+<button id="go">打开授权</button>
+<script>
+document.getElementById('go').onclick=()=>{
+  const cid=document.getElementById('cid').value.trim();
+  if(!cid){alert('请输入 client_id');return;}
+  const redirect=encodeURIComponent(location.origin+location.pathname.replace(/start\.html$/,'callback.html'));
+  const scope=encodeURIComponent('https://www.googleapis.com/auth/youtube.upload');
+  const url=`https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${cid}&redirect_uri=${redirect}&scope=${scope}&access_type=offline&prompt=consent`;
+  location.href=url;
+};
+</script>
