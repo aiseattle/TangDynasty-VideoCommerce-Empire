@@ -1,6 +1,9 @@
 {
-  "workflow": ".github/workflows/preflight-apis.yml",
+  "workflow": ".github/workflows/named-dispatcher.yml",
   "ref": "main",
-  "inputs": { "verbose": "false" },
-  "force": "run-preflight-001"
+  "inputs": {
+    "display_name": "Preflight APIs (YouTube/OpenAI/Runway/ElevenLabs)",
+    "ref": "main",
+    "inputs_json": "{\"verbose\":\"false\"}"
+  }
 }
