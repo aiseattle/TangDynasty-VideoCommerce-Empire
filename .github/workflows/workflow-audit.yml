@@ -1,0 +1,78 @@
+name: Workflow Audit (Manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: List workflows via REST API
+        id: list
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+
+            // 1) list workflows
+            const { data: wfs } = await github.rest.actions.listRepoWorkflows({ owner, repo, per_page: 100 });
+
+            // 2) for each workflow, fetch recent runs (<=5)
+            const runsByWf = {};
+            for (const wf of wfs.workflows) {
+              const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                owner, repo, workflow_id: wf.id, per_page: 5
+              });
+              runsByWf[wf.id] = runs.workflow_runs.map(r => ({
+                id: r.id,
+                name: wf.name,
+                path: wf.path,
+                head_branch: r.head_branch,
+                status: r.status,
+                conclusion: r.conclusion,
+                html_url: r.html_url,
+                run_number: r.run_number,
+                created_at: r.created_at
+              }));
+            }
+
+            const summary = [
+              `## Workflows (${wfs.workflows.length})`,
+              ...wfs.workflows.map(w => `- **${w.name}**  \`${w.path}\`  (state: ${w.state}, id: ${w.id})`),
+              '',
+              `## Recent Runs (<=5 each)`
+            ];
+
+            for (const wf of wfs.workflows) {
+              const runs = runsByWf[wf.id] || [];
+              summary.push(`### ${wf.name}  \`${wf.path}\``);
+              if (runs.length === 0) {
+                summary.push('- _No recent runs_');
+              } else {
+                for (const r of runs) {
+                  summary.push(`- #${r.run_number} [${r.status}/${r.conclusion}](${r.html_url}) on \`${r.head_branch}\` @ ${r.created_at}`);
+                }
+              }
+            }
+
+            const fs = require('fs');
+            fs.mkdirSync('audit', { recursive: true });
+            fs.writeFileSync('audit/workflows.json', JSON.stringify(wfs, null, 2));
+            fs.writeFileSync('audit/runs.json', JSON.stringify(runsByWf, null, 2));
+            fs.writeFileSync('audit/SUMMARY.md', summary.join('\n'));
+
+            core.setOutput('summary_path', 'audit/SUMMARY.md');
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-audit
+          path: audit/
+
+      - name: Post job summary
+        if: always()
+        run: |
+          echo "## Workflow Audit Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat audit/SUMMARY.md >> $GITHUB_STEP_SUMMARY
