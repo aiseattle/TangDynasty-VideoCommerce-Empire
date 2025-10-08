@@ -1,5 +1,9 @@
 {
-  "workflow": ".github/workflows/workflow-audit.yml",
+  "workflow": ".github/workflows/named-dispatcher.yml",
   "ref": "main",
-  "inputs": {}
+  "inputs": {
+    "display_name": "RunwayML Video Automation for USA Market",
+    "ref": "main",
+    "inputs_json": "{}"
+  }
 }
