@@ -1,0 +1,5 @@
+{
+  "workflow": ".github/workflows/workflow-audit.yml",
+  "ref": "main",
+  "inputs": {}
+}
