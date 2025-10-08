@@ -1,7 +1,6 @@
 {
   "workflow": ".github/workflows/preflight-apis.yml",
   "ref": "main",
-  "inputs": {
-    "verbose": "false"
-  }
+  "inputs": { "verbose": "false" },
+  "force": "run-preflight-001"
 }
