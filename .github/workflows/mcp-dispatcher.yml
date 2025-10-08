@@ -1,0 +1,42 @@
+name: MCP Dispatcher
+on:
+  push:
+    paths:
+      - ".mcp/dispatch.json"
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read dispatch.json
+        id: read
+        run: |
+          cat .mcp/dispatch.json
+          echo "WF=$(jq -r '.workflow' .mcp/dispatch.json)" >> $GITHUB_OUTPUT
+          echo "REF=$(jq -r '.ref // \"main\"' .mcp/dispatch.json)" >> $GITHUB_OUTPUT
+          echo "INPUTS=$(cat .mcp/dispatch.json | jq -c '.inputs // {}')" >> $GITHUB_OUTPUT
+
+      - name: Dispatch target workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const wfPath = process.env.WF;
+            const ref = process.env.REF;
+            const inputs = JSON.parse(process.env.INPUTS || "{}");
+
+            core.info(`Dispatching ${wfPath} on ref ${ref} with inputs ${JSON.stringify(inputs)}`);
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: wfPath,      // 支持 ".github/workflows/xxx.yml" 或 "xxx.yml"
+              ref,
+              inputs
+            });
+        env:
+          WF: ${{ steps.read.outputs.WF }}
+          REF: ${{ steps.read.outputs.REF }}
+          INPUTS: ${{ steps.read.outputs.INPUTS }}
