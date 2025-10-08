@@ -1,5 +1,5 @@
 {
-  "workflow": ".github/workflows/workflow-audit.yml",
+  "workflow": ".github/workflows/manualize-and-freeze.yml",
   "ref": "main",
   "inputs": {}
 }
