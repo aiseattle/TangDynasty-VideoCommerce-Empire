@@ -1,7 +1,5 @@
 {
-  "workflow": ".github/workflows/merge-pr-by-title.yml",
+  "workflow": ".github/workflows/workflow-audit.yml",
   "ref": "main",
-  "inputs": {
-    "title": "CI: manualize workflows & freeze TikTok by default"
-  }
+  "inputs": {}
 }
