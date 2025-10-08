@@ -1,0 +1,45 @@
+name: Named Dispatcher
+on:
+  workflow_dispatch:
+    inputs:
+      display_name:
+        description: Workflow display name (exact)
+        required: true
+      ref:
+        description: Git ref/branch
+        required: false
+        default: main
+      inputs_json:
+        description: JSON string for workflow inputs
+        required: false
+        default: "{}"
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const display = core.getInput('display_name', { required: true });
+            const ref     = core.getInput('ref') || 'main';
+            const inputs  = JSON.parse(core.getInput('inputs_json') || "{}");
+
+            // list all workflows then match by display name
+            const { data } = await github.rest.actions.listRepoWorkflows({ owner, repo, per_page: 100 });
+            const wf = data.workflows.find(w => w.name === display);
+            if (!wf) {
+              core.setFailed(`Workflow not found by display name: ${display}`);
+              return;
+            }
+            core.info(`Found: ${wf.name} -> ${wf.path}`);
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner, repo,
+              workflow_id: wf.path,  // use file path
+              ref,
+              inputs
+            });
+            core.notice(`Dispatched ${wf.name} (${wf.path}) on ${ref} with inputs=${JSON.stringify(inputs)}`);
