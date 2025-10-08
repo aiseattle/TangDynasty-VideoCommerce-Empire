@@ -1,9 +1,7 @@
 {
-  "workflow": ".github/workflows/named-dispatcher.yml",
+  "workflow": ".github/workflows/preflight-apis.yml",
   "ref": "main",
   "inputs": {
-    "display_name": "RunwayML Video Automation for USA Market",
-    "ref": "main",
-    "inputs_json": "{}"
+    "verbose": "false"
   }
 }
