@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8" />
+<title>YouTube OAuth Callback</title>
+<h2>YouTube OAuth Callback</h2>
+<p>下面显示从 Google 回传的 <code>code</code>。复制它，然后回到 MCP 触发“交换工作流”。</p>
+<pre id="out" style="white-space:pre-wrap"></pre>
+<script>
+const p=new URLSearchParams(location.search);
+const code=p.get('code'); const err=p.get('error');
+document.getElementById('out').textContent = err ? ('error='+err) : ('code='+code);
+</script>
