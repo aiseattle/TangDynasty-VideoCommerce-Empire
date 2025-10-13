@@ -1,7 +1,9 @@
 {
-  "workflow": ".github/workflows/preflight-apis.yml",
+  "mode": "workflow_dispatch",
+  "workflow": "named-dispatcher.yml",
   "ref": "main",
   "inputs": {
-    "verbose": "false"
+    "workflow": "video-automation-2025.yml",
+    "ref": "main"
   }
 }
