@@ -3,7 +3,8 @@
   "workflow": "named-dispatcher.yml",
   "ref": "main",
   "inputs": {
-    "workflow": "video-automation-2025.yml",
-    "ref": "main"
+    "target_workflow": "video-automation-2025.yml",
+    "run_name": "mcp-smoke-{{timestamp}}",
+    "publish": "false"
   }
 }
