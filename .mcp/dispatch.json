@@ -1,0 +1,9 @@
+{
+  "mode": "workflow_dispatch",
+  "workflow": "named-dispatcher.yml",
+  "ref": "main",
+  "inputs": {
+    "workflow": "video-automation-2025.yml",
+    "ref": "main"
+  }
+}
