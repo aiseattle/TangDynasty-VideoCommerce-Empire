@@ -1,9 +1,5 @@
 {
-  "workflow": ".github/workflows/named-dispatcher.yml",
+  "workflow_file": ".github/workflows/video-automation-2025.yml",
   "ref": "main",
-  "inputs": {
-    "display_name": "Preflight APIs (YouTube/OpenAI/Runway/ElevenLabs)",
-    "ref": "main",
-    "inputs_json": "{\"verbose\":\"false\"}"
-  }
+  "inputs": {}
 }
