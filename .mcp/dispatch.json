@@ -1,10 +1,6 @@
 {
   "mode": "workflow_dispatch",
-  "workflow": "named-dispatcher.yml",
+  "workflow_file": ".github/workflows/video-automation-2025.yml",
   "ref": "main",
-  "inputs": {
-    "target_workflow": "video-automation-2025.yml",
-    "run_name": "mcp-smoke-{{timestamp}}",
-    "publish": "false"
-  }
+  "inputs": {}
 }
